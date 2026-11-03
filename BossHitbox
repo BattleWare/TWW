@@ -1,0 +1,87 @@
+-- ============================================
+-- The Colonel ESP + Sadece Kafa Hitbox
+-- ============================================
+local WS = game:GetService("Workspace")
+
+local HEAD_HITBOX_SIZE = Vector3.new(12, 12, 12) -- sadece kafa büyüklüğü
+
+local _originalSize = nil
+
+local function GetColonel()
+    local e = WS:FindFirstChild("WORKSPACE_Entities")
+    if not e then return nil end
+    local n = e:FindFirstChild("NPCs")
+    if not n then return nil end
+    local c = n:FindFirstChild("The Colonel")
+    if not c then return nil end
+    return c:FindFirstChild("NPCTemplateHumanV4")
+end
+
+local function ClearColonel()
+    for _, obj in ipairs(WS:GetDescendants()) do
+        if obj:IsA("Highlight") and obj.Adornee and obj.Adornee.Name == "NPCTemplateHumanV4" then
+            obj:Destroy()
+        end
+        if obj.Name == "ColonelNameTag" then obj:Destroy() end
+    end
+end
+
+local function BuildColonel()
+    local NPC = GetColonel()
+    if not NPC then return end
+
+    -- Highlight
+    if not NPC:FindFirstChild("Highlight") then
+        local hl = Instance.new("Highlight")
+        hl.Name = "Highlight"
+        hl.Adornee = NPC
+        hl.FillColor = Color3.fromRGB(255, 0, 0)
+        hl.OutlineColor = Color3.new(1, 1, 1)
+        hl.FillTransparency = 0.6
+        hl.OutlineTransparency = 0
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.Parent = NPC
+    end
+
+    -- İsim
+    local head = NPC:FindFirstChild("Head")
+    if head and not head:FindFirstChild("ColonelNameTag") then
+        local bb = Instance.new("BillboardGui")
+        bb.Name = "ColonelNameTag"
+        bb.Adornee = head
+        bb.Size = UDim2.new(0, 200, 0, 50)
+        bb.StudsOffset = Vector3.new(0, 2.5, 0)
+        bb.AlwaysOnTop = true
+        bb.Parent = head
+
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, 0, 1, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = "The Colonel"
+        lbl.TextColor3 = Color3.fromRGB(255, 50, 50)
+        lbl.TextStrokeTransparency = 0
+        lbl.TextStrokeColor3 = Color3.new(0, 0, 0)
+        lbl.TextScaled = true
+        lbl.Font = Enum.Font.GothamBold
+        lbl.Parent = bb
+    end
+
+    -- Sadece Kafa hitbox
+    if head and head:IsA("BasePart") then
+        if not _originalSize then
+            _originalSize = head.Size
+        end
+        head.Size = HEAD_HITBOX_SIZE
+        head.Transparency = 0.5
+        head.CanCollide = false
+        head.Material = Enum.Material.ForceField
+    end
+end
+
+task.spawn(function()
+    while task.wait(0.5) do
+        BuildColonel()
+    end
+end)
+
+BuildColonel()
